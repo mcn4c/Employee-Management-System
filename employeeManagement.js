@@ -105,7 +105,7 @@ const displayDepartment = () => {
     console.log("Our departments listed by name: \n");
     connection.query("SELECT * FROM department", (err, res) => {
         if (err) throw err;
-        console.log(res);
+        console.table(res);
         chooseStart();
     });
 }
@@ -114,7 +114,7 @@ const displayRole = () => {
     console.log("Employee roles and salaries for each department: \n");
     connection.query("SELECT title, salary, department_id FROM role", (err, res) => {
         if (err) throw err;
-        console.log(res);
+        console.table(res);
         chooseStart();
     });
 }
@@ -123,7 +123,7 @@ const displayEmployee = () => {
     console.log("Lists out employees by name with their role and manager ids: \n");
     connection.query("SELECT firstName, lastName, role_id, manager_id FROM employee", (err, res) => {
         if (err) throw err;
-        console.log(res);
+        console.table(res);
         chooseStart();
     });
 }
