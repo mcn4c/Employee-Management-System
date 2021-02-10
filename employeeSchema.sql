@@ -32,7 +32,7 @@ CREATE TABLE employee (
   );
 
 
-INSERT INTO department (name)
+INSERT INTO department (dep_name)
 VALUES ("Production"), ("Marketing"), ("Accounting"), ("Human Resources");
 
 INSERT INTO role (title, salary, department_id)

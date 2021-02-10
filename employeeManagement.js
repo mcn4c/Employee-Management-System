@@ -12,7 +12,8 @@ const connection = mysql.createConnection({
 
 	// Be sure to update with your own MySQL password!
 	password: 'password',
-	database: 'employee_managementDB'
+	database: 'employee_managementDB',
+	debug: true
 });
 
 connection.connect((err) => {
@@ -181,69 +182,61 @@ const addDepartment = () => {
 				}
 			);
 		});
+};
 
-// 	const addRole = () => {
-// 		connection.query(
-// 			'SELECT department.id, department.dep_name, role.department_id, role.title, role.salary FROM role WHERE role.department_id = department.id',
-// 			(err, results) => {
-// 				if (err) throw err;
-// 				// once you have the items, prompt the user for which they'd like to bid on
-// 				inquirer
-// 					.prompt([
-// 						{
-// 							name: 'depChoice',
-// 							type: 'rawlist',
-// 							choices() {
-// 								// inquirer prompt with function
-// 								const choiceArray = [];
-// 								//results coming from query
-// 								results.forEach(({ dep_name }) => {
-// 									choiceArray.push(dep_name);
-// 								});
-// 								//need the return choiceArray because choices must have array to be query
-// 								return choiceArray;
-// 							},
-// 							message: 'To which department would you like to add a role?'
-// 						},
-// 						{
-// 							name: 'roleAdd',
-// 							type: 'input',
-// 							message: 'What role would you like to add?'
-// 						},
-// 						{
-// 							name: 'salaryAdd',
-// 							type: 'input',
-// 							message: "What is the new role's starting salary?",
-// 							validate(value) {
-// 								if (isNaN(value) === false) {
-// 									return true;
-// 								}
-// 								return false;
-// 							}
-// 						}
-// 					])
-// 					.then((answer) => {
-// 						let depChosenId;
-// 						results.forEach((dep) => {
-// 							if (dep.dep_name === answer.depChoice) {
-// 								depChosenId = dep.department_id;
+const addRole = () => {
+	const choiceArray = {};
 
-// 								connection.query('UPDATE role SET ? WHERE ?', [
-// 									{
-// 										tile: answer.roleAdd
-// 									},
-// 									{ salary: answer.salaryAdd },
+	connection.query('SELECT DISTINCT department.id, department.dep_name FROM department', (err, results) => {
+		if (err) throw err;
+		// once you have the items, prompt the user for which they'd like to bid on
+		inquirer
+			.prompt([
+				{
+					name: 'depChoice',
+					type: 'rawlist',
+					choices() {
+						// inquirer prompt with function
+						// const choiceArray = [];
+						//results coming from query
+						results.forEach(({ dep_name, id }) => {
+							choiceArray[dep_name] = id;
+						});
+						//need the return choiceArray because choices must have array to be query
+						return Object.keys(choiceArray);
+					},
+					message: 'To which department would you like to add a role?'
+				},
+				{
+					name: 'roleAdd',
+					type: 'input',
+					message: 'What role would you like to add?'
+				},
+				{
+					name: 'salaryAdd',
+					type: 'input',
+					message: "What is the new role's starting salary?",
+					validate(value) {
+						if (isNaN(value) === false) {
+							return true;
+						}
+						return false;
+					}
+				}
+			])
+			.then((answer) => {
+				let depChosenId;
+				console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
 
-// 									{
-// 										department_id: depChosenId
-// 									}
-// 								]);
-// 							}
-// 							console.log('Please choose an existing department (may need to capitalize first letter).');
-// 							addRole();
-// 						});
-// 					});
-// 			}
-// 		);
-// 	};
-// };
+				connection.query('INSERT INTO role SET ?', [
+					{
+						title: answer.roleAdd,
+
+						salary: answer.salaryAdd,
+
+						department_id: parseInt(choiceArray[answer.depChoice])
+					}
+				]);
+			});
+	});
+};
