@@ -13,7 +13,7 @@ const connection = mysql.createConnection({
 	// Be sure to update with your own MySQL password!
 	password: 'password',
 	database: 'employee_managementDB',
-	debug: true
+	debug: false
 });
 
 connection.connect((err) => {
@@ -50,6 +50,7 @@ const chooseStart = () => {
 
 				case 'Quit':
 					connection.end();
+					console.log("You have ended this session.")
 					break;
 
 				default:
@@ -189,7 +190,7 @@ const addRole = () => {
 
 	connection.query('SELECT DISTINCT department.id, department.dep_name FROM department', (err, results) => {
 		if (err) throw err;
-		// once you have the items, prompt the user for which they'd like to bid on
+
 		inquirer
 			.prompt([
 				{
@@ -225,8 +226,8 @@ const addRole = () => {
 				}
 			])
 			.then((answer) => {
-				let depChosenId;
-				console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
+				// let depChosenId;
+				// console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
 
 				connection.query('INSERT INTO role SET ?', [
 					{
@@ -234,9 +235,76 @@ const addRole = () => {
 
 						salary: answer.salaryAdd,
 
-						department_id: parseInt(choiceArray[answer.depChoice])
+						department_id: parseInt(choiceArray[answer.depChoice]),
+					
 					}
+					
+
 				]);
+				console.log("You've added " + answer.roleAdd + " to the " + answer.depChoice + " department");
+				chooseStart();
 			});
 	});
 };
+
+const addEmployee = () => {
+	const roleArray = {};
+
+	connection.query('SELECT role.id, role.title, role.department_id FROM role', (err, results) => {
+		if (err) throw err;
+		
+		inquirer
+			.prompt([
+				{
+					name: 'roleChoice',
+					type: 'rawlist',
+					choices() {
+						// inquirer prompt with function
+						// const choiceArray = [];
+						//results coming from query
+						results.forEach(({ title, id }) => {
+							roleArray[title] = id;
+						});
+						//need the return choiceArray because choices must have array to be query
+						return Object.keys(roleArray);
+					},
+					message: 'Which role will the new employee have?'
+				},
+				{
+					name: 'firstNameAdd',
+					type: 'input',
+					message: "What is the new employee's first name?"
+				},
+				{
+					name: 'lastNameAdd',
+					type: 'input',
+					message: "What is the employee's last name?",
+					
+				}
+				
+			])
+			.then((answer) => {
+				// let roleChosenId;
+				// console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
+
+				connection.query('INSERT INTO employee SET ?', [
+					{
+						firstName: answer.firstNameAdd,
+
+						lastName: answer.lastNameAdd,
+
+						role_id: parseInt(roleArray[answer.roleChoice])
+						// manager_id: 
+					}
+					
+				]);
+				console.log("You've added " + answer.firstNameAdd + " " + answer.lastNameAdd + " as a new employee." );
+				chooseStart();
+			});
+
+
+
+
+
+		});
+	}
