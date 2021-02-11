@@ -45,7 +45,7 @@ const chooseStart = () => {
 					break;
 
 				case 'Update employee roles':
-					updateQuery();
+					updateRole();
 					break;
 
 				case 'Quit':
@@ -241,7 +241,7 @@ const addRole = () => {
 					
 
 				]);
-				console.log("You've added " + answer.roleAdd + " to the " + answer.depChoice + " department");
+				console.log("You've added " + answer.roleAdd + " role to the " + answer.depChoice + " department");
 				chooseStart();
 			});
 	});
@@ -308,3 +308,91 @@ const addEmployee = () => {
 
 		});
 	}
+
+
+	const updateRole = () => {
+		const employeeArray = {}
+	
+
+	connection.query('SELECT role_id, firstName, lastName, title, role.id FROM employee, role WHERE employee.role_id = role.id' , (err, results) => {
+		if (err) throw err;
+
+		inquirer
+			.prompt([
+				{
+					name: 'employeeChoice',
+					type: 'rawlist',
+					choices() {
+						
+						
+						results.forEach(({ lastName, firstName }) => { employeeArray[lastName] = firstName;
+
+							
+						});
+						//need the return choiceArray because choices must have array to be query
+						// return Object.keys(employeeArray);
+						return Object.keys(employeeArray)
+						console.log(employeeArray);
+					},
+					message: 'Choose the employee whose role you wish to change:'
+				},
+
+				
+				{
+					name: 'roleUpdate',
+					type: 'rawlist',
+					choices() {
+						
+						const roleChangeChoice = [];
+						results.forEach(({ title }) => {
+
+							roleChangeChoice.push(title);
+						});
+						//need the return choiceArray because choices must have array to be query
+						// return Object.keys(employeeArray);
+						return roleChangeChoice
+						console.log(roleChangeChoice);
+					},
+
+					message: 'Select the new role for the employee'
+				},
+			
+			])
+			.then((answer) => {
+				
+				let chosenRole;
+				results.forEach((item) => {
+					if (item.title === answer.roleUpdate) {
+						chosenRole = item;
+					}
+				})
+
+				
+
+				connection.query(
+					"UPDATE employee SET ? WHERE ?",
+					[
+						{role_id: chosenRole.id},
+						{lastName: answer.employeeChoice}
+
+					],
+					(error) => {
+						if (error) throw err;
+						console.log("Employee role updated successfully")
+						chooseStart();
+					}
+				)
+
+				
+
+			})
+		})
+
+
+			}
+
+
+			
+
+
+		
