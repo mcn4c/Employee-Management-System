@@ -3,17 +3,11 @@ const inquirer = require('inquirer');
 
 const connection = mysql.createConnection({
 	host: 'localhost',
-
-	// Your port; if not 3306
 	port: 3306,
-
-	// Your username
 	user: 'root',
-
-	// Be sure to update with your own MySQL password!
 	password: 'password',
 	database: 'employee_managementDB',
-	debug: false
+	debug: true
 });
 
 connection.connect((err) => {
@@ -21,12 +15,15 @@ connection.connect((err) => {
 	chooseStart();
 });
 
+//app begins by prompting list
 const chooseStart = () => {
 	inquirer
 		.prompt({
 			name: 'choice',
 			type: 'list',
 			message: 'What would you like to do?',
+
+			//set of options for user to pick from - Quit ends connection
 			choices: [
 				'Add departments, roles, or employees',
 				'View departments, roles, or employees',
@@ -34,6 +31,7 @@ const chooseStart = () => {
 				'Quit'
 			]
 		})
+		//functions to run depending on user selection
 		.then((answer) => {
 			switch (answer.choice) {
 				case 'Add departments, roles, or employees':
@@ -60,6 +58,7 @@ const chooseStart = () => {
 		});
 };
 
+//addQuery prompts user to pick where to add 
 const addQuery = () => {
 	inquirer
 		.prompt([
@@ -70,7 +69,11 @@ const addQuery = () => {
 				choices: [ 'Add department', 'Add role', 'Add employee', 'Go back to main menu' ]
 			}
 		])
+
+	
 		.then((answer) => {
+
+			//functions to run based on user selection
 			switch (answer.addCategory) {
 				case 'Add department':
 					addDepartment();
@@ -92,6 +95,212 @@ const addQuery = () => {
 			}
 		});
 };
+
+
+// Functions to run based on addQuery choice: addDepartment, addRole, addEmployee
+
+//To add a department
+const addDepartment = () => {
+
+	connection.query("SELECT * FROM department, role",
+	inquirer
+		.prompt([
+			{
+				name: 'whichDepartment',
+				type: 'input',
+				message: 'What is the name of the department you wish to add?',
+				//validate that data was entered
+				validate(value) {
+					if (value === null) {
+						return false;
+					}
+					return true;
+				}
+			},
+			
+
+		])
+		.then((answer) => {
+			connection.query(
+				//where to insert new data
+				'INSERT INTO department SET ?',
+				{
+					dep_name: answer.whichDepartment
+				},
+				(err) => {
+					if (err) throw err;
+					console.log("\nYou've created a " + answer.whichDepartment + ' department\n');
+					chooseStart();
+					
+					
+				},
+
+			);
+
+			
+
+
+
+		}));
+		
+
+		
+};
+
+// to add a new role
+const addRole = () => {
+	const choiceArray = {};
+
+	connection.query('SELECT DISTINCT department.id, department.dep_name FROM department', (err, results) => {
+		if (err) throw err;
+
+		inquirer
+			.prompt([
+
+				
+				{
+					name: 'depChoice',
+					type: 'rawlist',
+					choices() {
+						
+						results.forEach(({ dep_name, id }) => {
+							choiceArray[dep_name] = id;
+						});
+						//need the return choiceArray because choices must have array to be query
+						return Object.keys(choiceArray);
+					},
+					message: 'To which department would you like to add a role?'
+				},
+				{
+					name: 'roleAdd',
+					type: 'input',
+					message: 'What role would you like to add?',
+					//validation -- but not working
+					validate(str) {
+						if (str == "manager" || "MANAGER" || "Manager") {
+							return false;
+							console.log("You may not add a manager at this time")
+							addRole();
+
+						}
+						else {
+						return true;}
+					},
+					
+					
+					
+				},
+				{
+					name: 'salaryAdd',
+					type: 'input',
+					message: "What is the new role's starting salary?",
+					validate(value) {
+						//make sure input is a number value
+						if (isNaN(value) === false) {
+							return true;
+						}
+						return false;
+					}
+				}
+			])
+			.then((answer) => {
+
+
+				// insert role title, salary and department id into role table
+
+				connection.query('INSERT INTO role SET ?', [
+					{
+						title: answer.roleAdd,
+
+						salary: answer.salaryAdd,
+
+						department_id: parseInt(choiceArray[answer.depChoice]),
+					
+					}
+					
+
+				]);
+				console.log("You've added " + answer.roleAdd + " role to the " + answer.depChoice + " department");
+				chooseStart();
+			});
+	});
+};
+
+//add an employee
+const addEmployee = () => {
+	const depArray ={};
+	const roleArray = {};
+
+	connection.query('SELECT department.id, dep_name, role.id, role.title, role.department_id FROM role, department', (err, results) => {
+		if (err) throw err;
+		
+		inquirer
+			.prompt([
+
+				{
+					name: 'depChoice',
+					type: 'rawlist',
+					choices() {
+						
+						results.forEach(({ dep_name, id }) => {
+							depArray[dep_name] = id;
+						});
+						//need the return choiceArray because choices must have array to be query
+						return Object.keys(depArray);
+					},
+					message: 'To which department would you like to add an employee?'
+				},
+				{
+					name: 'roleChoice',
+					type: 'rawlist',
+					choices() {
+						
+						results.forEach(({ title, id }) => {
+							roleArray[title] = id;
+						});
+						return Object.keys(roleArray);
+					},
+					message: 'Which role will the new employee have?'
+				},
+				{
+					name: 'firstNameAdd',
+					type: 'input',
+					message: "What is the new employee's first name?"
+				},
+				{
+					name: 'lastNameAdd',
+					type: 'input',
+					message: "What is the employee's last name?",
+					
+				}
+				
+				
+			])
+			.then((answer) => {
+
+				connection.query('INSERT INTO employee SET ?', [
+					{
+						firstName: answer.firstNameAdd,
+
+						lastName: answer.lastNameAdd,
+
+						role_id: parseInt(roleArray[answer.roleChoice]),
+						
+						manager_id: parseInt(depArray[answer.depChoice] + 00)
+					}
+					
+				]);
+				console.log("You've added " + answer.firstNameAdd + " " + answer.lastNameAdd + " as a new employee." );
+				chooseStart();
+			});
+
+
+
+
+
+		});
+	}
+
 
 const viewQuery = () => {
 	inquirer
@@ -156,6 +365,8 @@ const displayEmployee = () => {
 };
 
 const addDepartment = () => {
+
+	connection.query("SELECT * FROM department, role",
 	inquirer
 		.prompt([
 			{
@@ -168,7 +379,9 @@ const addDepartment = () => {
 					}
 					return true;
 				}
-			}
+			},
+			
+
 		])
 		.then((answer) => {
 			connection.query(
@@ -178,136 +391,23 @@ const addDepartment = () => {
 				},
 				(err) => {
 					if (err) throw err;
-					console.log("You've created a " + answer.whichDepartment + ' department.');
+					console.log("\nYou've created a " + answer.whichDepartment + ' department\n');
 					chooseStart();
-				}
+					
+					
+				},
+
 			);
-		});
-};
 
-const addRole = () => {
-	const choiceArray = {};
+			
 
-	connection.query('SELECT DISTINCT department.id, department.dep_name FROM department', (err, results) => {
-		if (err) throw err;
 
-		inquirer
-			.prompt([
-				{
-					name: 'depChoice',
-					type: 'rawlist',
-					choices() {
-						// inquirer prompt with function
-						// const choiceArray = [];
-						//results coming from query
-						results.forEach(({ dep_name, id }) => {
-							choiceArray[dep_name] = id;
-						});
-						//need the return choiceArray because choices must have array to be query
-						return Object.keys(choiceArray);
-					},
-					message: 'To which department would you like to add a role?'
-				},
-				{
-					name: 'roleAdd',
-					type: 'input',
-					message: 'What role would you like to add?'
-				},
-				{
-					name: 'salaryAdd',
-					type: 'input',
-					message: "What is the new role's starting salary?",
-					validate(value) {
-						if (isNaN(value) === false) {
-							return true;
-						}
-						return false;
-					}
-				}
-			])
-			.then((answer) => {
-				// let depChosenId;
-				// console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
 
-				connection.query('INSERT INTO role SET ?', [
-					{
-						title: answer.roleAdd,
-
-						salary: answer.salaryAdd,
-
-						department_id: parseInt(choiceArray[answer.depChoice]),
-					
-					}
-					
-
-				]);
-				console.log("You've added " + answer.roleAdd + " role to the " + answer.depChoice + " department");
-				chooseStart();
-			});
-	});
-};
-
-const addEmployee = () => {
-	const roleArray = {};
-
-	connection.query('SELECT role.id, role.title, role.department_id FROM role', (err, results) => {
-		if (err) throw err;
+		}));
 		
-		inquirer
-			.prompt([
-				{
-					name: 'roleChoice',
-					type: 'rawlist',
-					choices() {
-						// inquirer prompt with function
-						// const choiceArray = [];
-						//results coming from query
-						results.forEach(({ title, id }) => {
-							roleArray[title] = id;
-						});
-						//need the return choiceArray because choices must have array to be query
-						return Object.keys(roleArray);
-					},
-					message: 'Which role will the new employee have?'
-				},
-				{
-					name: 'firstNameAdd',
-					type: 'input',
-					message: "What is the new employee's first name?"
-				},
-				{
-					name: 'lastNameAdd',
-					type: 'input',
-					message: "What is the employee's last name?",
-					
-				}
-				
-			])
-			.then((answer) => {
-				// let roleChosenId;
-				// console.log(answer.depChoice, choiceArray, choiceArray[answer.depChoice]);
 
-				connection.query('INSERT INTO employee SET ?', [
-					{
-						firstName: answer.firstNameAdd,
-
-						lastName: answer.lastNameAdd,
-
-						role_id: parseInt(roleArray[answer.roleChoice])
-						// manager_id: 
-					}
-					
-				]);
-				console.log("You've added " + answer.firstNameAdd + " " + answer.lastNameAdd + " as a new employee." );
-				chooseStart();
-			});
-
-
-
-
-
-		});
-	}
+		
+};
 
 
 	const updateRole = () => {
@@ -364,15 +464,18 @@ const addEmployee = () => {
 				results.forEach((item) => {
 					if (item.title === answer.roleUpdate) {
 						chosenRole = item;
+						
 					}
 				})
+
+				var chosenRoleId = chosenRole.id -1;
 
 				
 
 				connection.query(
 					"UPDATE employee SET ? WHERE ?",
 					[
-						{role_id: chosenRole.id},
+						{role_id: chosenRoleId},
 						{lastName: answer.employeeChoice}
 
 					],
