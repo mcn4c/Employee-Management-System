@@ -208,7 +208,7 @@ const addRole = () => {
 					
 
 				]);
-				console.log("You've added " + answer.roleAdd + " role to the " + answer.depChoice + " department");
+				console.log("\nYou've added " + answer.roleAdd + " role to the " + answer.depChoice + " department\n");
 				chooseStart();
 			});
 	});
@@ -239,7 +239,7 @@ const addEmployee = () => {
 					message: 'Which role will the new employee have?'
 				},
 				{
-					name: 'depChoice',
+					name: 'depAddTo',
 					type: 'rawlist',
 					choices() {
 						
@@ -275,11 +275,11 @@ const addEmployee = () => {
 
 						role_id: parseInt(roleArray[answer.roleChoice]),
 						
-						manager_id: parseInt(depArray[answer.depChoice])
+						manager_id: parseInt(depArray[answer.depAddTo])
 					}
 					
 				]);
-				console.log("You've added " + answer.firstNameAdd + " " + answer.lastNameAdd + " as a new employee." );
+				console.log("\nYou've added " + answer.firstNameAdd + " " + answer.lastNameAdd + " as a new employee.\n" );
 				chooseStart();
 			});
 
@@ -327,7 +327,7 @@ const viewQuery = () => {
 };
 
 const displayDepartment = () => {
-	console.log('Our departments listed by name: \n');
+	console.log('\nOur departments listed by name: \n');
 	connection.query('SELECT dep_name, department.id FROM department', (err, res) => {
 		if (err) throw err;
 		console.table(res);
@@ -336,8 +336,8 @@ const displayDepartment = () => {
 };
 
 const displayRole = () => {
-	console.log('Employee roles and salaries for each department: \n');
-	connection.query('SELECT title, salary, department_id FROM role', (err, res) => {
+	console.log('\nEmployee roles and salaries for each department: \n');
+	connection.query('SELECT * FROM role', (err, res) => {
 		if (err) throw err;
 		console.table(res);
 		chooseStart();
@@ -345,7 +345,7 @@ const displayRole = () => {
 };
 
 const displayEmployee = () => {
-	console.log('Lists out employees by name with their role and manager ids: \n');
+	console.log('\nLists out employees by name with their role and manager ids: \n');
 	connection.query('SELECT * FROM employee', (err, res) => {
 		if (err) throw err;
 		console.table(res);
@@ -370,7 +370,7 @@ const displayEmployee = () => {
 					choices() {
 						
 						
-						results.forEach(({ lastName, firstName }) => { employeeArray[lastName] = firstName;
+						results.forEach(({ lastName }) => { employeeArray[lastName] = lastName;
 
 							
 						});
@@ -411,7 +411,7 @@ const displayEmployee = () => {
 					}
 				})
 
-				var chosenRoleId = chosenRole.id -1;
+				   chosenRoleId = chosenRole.id;
 
 				
 
@@ -424,7 +424,7 @@ const displayEmployee = () => {
 					],
 					(error) => {
 						if (error) throw err;
-						console.log("Employee role updated successfully")
+						console.log("\nEmployee role updated successfully\n")
 						chooseStart();
 					}
 				)

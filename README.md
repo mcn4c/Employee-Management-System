@@ -31,7 +31,14 @@ As a business owner, I want to be able to view and manage the departments, roles
 
 ## Usage 
 
-Click on link for a video demonstration:
+Click on links for a video demonstration:
+
+### Part 1
+
+https://drive.google.com/file/d/1ZhlteylsakrL6K9yPKDYCXqUXAXOAHw8/view
+
+### Part 2
+https://drive.google.com/file/d/1ldW2YMF9LWA8jFDxgTjlIA25T_yjw1so/view
 
 
 ## Contribution 
